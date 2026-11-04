@@ -1,4 +1,4 @@
-import { initCloud } from './cloud.js';
+import { initCloud } from './auth-cloud.js';
 import { initPwa } from './pwa.js';
 (() => {
   'use strict';
@@ -20,29 +20,17 @@ import { initPwa } from './pwa.js';
   const uid = () => crypto.randomUUID();
   const icon = name => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
   const esc = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const examples = () => [
-    {title:'Baca 10 halaman sebelum tidur',notes:'Mulai dari buku yang sudah lama di meja.',category:'belajar',status:'plan',priority:'low',due:offsetDate(1),checks:[]},
-    {title:'Rapikan anggaran bulan ini',notes:'Cek pengeluaran dan sisihkan untuk tabungan.',category:'keuangan',status:'plan',priority:'high',due:offsetDate(3),checks:[{text:'Catat pengeluaran rutin',done:false},{text:'Tentukan target tabungan',done:false}]},
-    {title:'Rencanakan waktu bareng keluarga',notes:'Cari waktu luang untuk makan bersama akhir pekan.',category:'rumah',status:'plan',priority:'normal',due:'',checks:[]},
-    {title:'Jalan kaki 20 menit',notes:'Ambil jeda. Udara segar juga bagian dari produktif.',category:'kesehatan',status:'doing',priority:'normal',due:offsetDate(0),checks:[]},
-    {title:'Selesaikan satu pekerjaan utama',notes:'Fokus dulu pada satu hal yang paling berarti.',category:'kerja',status:'doing',priority:'high',due:offsetDate(0),checks:[{text:'Tentukan hasil yang ingin dicapai',done:true},{text:'Kerjakan tanpa distraksi',done:false},{text:'Cek kembali hasilnya',done:false}]},
-    {title:'Bereskan meja kerja',notes:'Ruang yang rapi, pikiran lebih lega.',category:'pribadi',status:'done',priority:'low',due:offsetDate(0),checks:[]}
-  ].map(t=>({...t,id:uid(),demo:true}));
   let tasks = [], view = 'all', categoryFilter = '', query = '', sort = 'manual', editingId = null, draftChecks = [], dragId = null, toastTimer, undoAction;
   let storageAvailable = true;
   let cloud = null, undoAccount = null, editingSnapshot = null;
-  let cloudState = {user:null,locked:false,phase:'local'};
+  let cloudState = {user:null,locked:true,phase:'local'};
   function validDate(s) {if(s==='')return true;if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const d=new Date(s+'T12:00:00');return !isNaN(d)&&localDate(d)===s;}
   function validateTask(t) {return t&&typeof t.id==='string'&&t.id.length>0&&t.id.length<100&&typeof t.title==='string'&&t.title.trim().length>0&&t.title.length<=160&&typeof t.notes==='string'&&t.notes.length<=5000&&categories.some(c=>c.id===t.category)&&statuses.some(s=>s.id===t.status)&&Object.hasOwn(priorityLabels,t.priority)&&typeof t.due==='string'&&validDate(t.due)&&Array.isArray(t.checks)&&t.checks.length<=100&&t.checks.every(c=>c&&typeof c.text==='string'&&c.text.length<=200&&typeof c.done==='boolean');}
   function cleanTask(t) {return {id:t.id,title:t.title.trim(),notes:t.notes,category:t.category,status:t.status,priority:t.priority,due:t.due,checks:t.checks.map(c=>({text:c.text,done:c.done})),demo:t.demo===true};}
-  let loadError = false;
-  try {const saved = localStorage.getItem(KEY);if(saved===null)tasks=examples();else{const data=JSON.parse(saved);if(!Array.isArray(data.tasks)||data.tasks.length>10000||!data.tasks.every(validateTask))throw Error('invalid');tasks=data.tasks.map(cleanTask);}}
-  catch {loadError=true;storageAvailable=false;tasks=[];}
-  function persist() {if(loadError)return false;try{localStorage.setItem(KEY,JSON.stringify({version:1,tasks}));storageAvailable=true;return true;}catch{storageAvailable=false;notify('Penyimpanan penuh atau tidak tersedia. Unduh cadangan datamu.');return false;}}
   function notify(message, undo) {clearTimeout(toastTimer);$('#toast-message').textContent=message;undoAction=undo;undoAccount=cloud?.accountId||'local';$('#toast-undo').hidden=!undo;$('#toast').hidden=false;toastTimer=setTimeout(()=>{$('#toast').hidden=true;undoAction=null;},undo?12000:6500);}
   function sync() {
     if(cloud?.active){try{cloud.save(tasks);}catch(error){tasks=cloud.tasks;render();notify(error.message);return false;}}
-    else if(!persist()){render();return false;}
+    else {tasks=[];render();notify('Masuk terlebih dulu untuk mengelola tugas.');return false;}
     render();return true;
   }
   function filteredTasks() {return tasks.filter(t=>(!categoryFilter||t.category===categoryFilter)&&(!query||`${t.title} ${t.notes} ${categories.find(c=>c.id===t.category).label}`.toLocaleLowerCase('id').includes(query))&&(view==='all'||(t.status!=='done'&&t.due&&(view==='today'?t.due===localDate():t.due>=localDate()&&t.due<=offsetDate(6)))));}
@@ -67,7 +55,7 @@ import { initPwa } from './pwa.js';
   function setView(next) {view=next;render();closeSidebar();}
   function closeSidebar() {$('#sidebar').classList.remove('open');$('#sidebar-scrim').classList.remove('open');$('#menu-open').setAttribute('aria-expanded','false');}
   const form=$('#task-form'), dialog=$('#task-dialog');
-  function openTask(id=null,status='plan') {if(cloud?.locked){notify('Tunggu sinkronisasi atau selesaikan perubahan akun terlebih dulu.');return;}editingId=id;const task=tasks.find(t=>t.id===id);editingSnapshot=task?JSON.stringify(task):null;form.reset();$('#dialog-title').textContent=task?'Detail tugas':'Tambah tugas';$('#delete-task').hidden=!task;form.elements.title.value=task?.title||'';form.elements.notes.value=task?.notes||'';form.elements.category.value=task?.category||categoryFilter||'pribadi';form.elements.status.value=task?.status||status;form.elements.priority.value=task?.priority||'normal';form.elements.due.value=task?.due||(view==='today'?localDate():'');draftChecks=task?task.checks.map(c=>({...c})):[];$('#check-new').value='';renderChecks();dialog.showModal();}
+  function openTask(id=null,status='plan') {if(!cloud?.active||cloud.locked){notify('Tunggu sinkronisasi atau selesaikan perubahan akun terlebih dulu.');return;}editingId=id;const task=tasks.find(t=>t.id===id);editingSnapshot=task?JSON.stringify(task):null;form.reset();$('#dialog-title').textContent=task?'Detail tugas':'Tambah tugas';$('#delete-task').hidden=!task;form.elements.title.value=task?.title||'';form.elements.notes.value=task?.notes||'';form.elements.category.value=task?.category||categoryFilter||'pribadi';form.elements.status.value=task?.status||status;form.elements.priority.value=task?.priority||'normal';form.elements.due.value=task?.due||(view==='today'?localDate():'');draftChecks=task?task.checks.map(c=>({...c})):[];$('#check-new').value='';renderChecks();dialog.showModal();}
   function renderChecks() {$('#checklist-editor').innerHTML=draftChecks.map((c,i)=>`<div class="check-row ${c.done?'completed':''}"><input type="checkbox" data-check="${i}" ${c.done?'checked':''} aria-label="Tandai langkah ${i+1} selesai"><input type="text" data-check-text="${i}" value="${esc(c.text)}" maxlength="200" aria-label="Teks langkah ${i+1}"><button class="icon-button" type="button" data-remove-check="${i}" aria-label="Hapus langkah ${i+1}">${icon('close')}</button></div>`).join('');$('#check-progress').textContent=draftChecks.length?`${draftChecks.filter(c=>c.done).length}/${draftChecks.length}`:'';}
   function addCheck() {const input=$('#check-new');if(!input.value.trim())return;if(draftChecks.length>=100){notify('Maksimal 100 langkah per tugas.');return;}draftChecks.push({text:input.value.trim(),done:false});input.value='';renderChecks();input.focus();}
   $('#task-category').innerHTML=categories.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
@@ -89,7 +77,7 @@ import { initPwa } from './pwa.js';
   $$('.nav-item').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
   $('#category-nav').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(b){categoryFilter=categoryFilter===b.dataset.category?'':b.dataset.category;render();closeSidebar();}});
   $('#active-filter').addEventListener('click',e=>{if(e.target.closest('#clear-filter')){categoryFilter='';render();}});
-  $('.brand').addEventListener('click',e=>{e.preventDefault();categoryFilter='';query='';$('#search').value='';setView('all');});
+  $$('.brand').forEach(brand=>brand.addEventListener('click',e=>{e.preventDefault();categoryFilter='';query='';$('#search').value='';setView('all');}));
   $('#search').addEventListener('input',e=>{query=e.target.value.trim().toLocaleLowerCase('id');render();});
   $('#sort').addEventListener('change',e=>{sort=e.target.value;render();});
   $('#clear-demo').addEventListener('click',()=>{const removed=tasks.filter(t=>t.demo);tasks=tasks.filter(t=>!t.demo);if(!sync())return;notify('Tugas contoh dihapus. Ruangmu siap diisi.',()=>{const existing=new Set(tasks.map(t=>t.id));tasks.push(...removed.filter(t=>!existing.has(t.id)));sync();});});
@@ -99,16 +87,16 @@ import { initPwa } from './pwa.js';
   $('#sidebar-scrim').addEventListener('click',closeSidebar);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar();});
   const backupDialog=$('#backup-dialog');$('#backup-open').addEventListener('click',()=>{closeSidebar();backupDialog.showModal();});$('[data-close-backup]').addEventListener('click',()=>backupDialog.close());
   $('#export-data').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({app:'ruang-hari',version:1,exportedAt:new Date().toISOString(),tasks},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`ruang-hari-${localDate()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('Cadangan sudah diunduh.');});
-  $('#import-data').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>10*1024*1024)throw Error();const data=JSON.parse(await file.text());if(data.app!=='ruang-hari'||data.version!==1||!Array.isArray(data.tasks)||data.tasks.length>10000||!data.tasks.every(validateTask))throw Error();const seen=new Set(tasks.map(t=>t.id));const added=[];for(const raw of data.tasks){if(!seen.has(raw.id)){seen.add(raw.id);added.push({...cleanTask(raw),demo:false});}}if(tasks.length+added.length>10000)throw Error();tasks.push(...added);if(loadError){loadError=false;}if(!sync())return;backupDialog.close();notify(`${added.length} tugas berhasil diimpor.`,()=>{const ids=new Set(added.map(t=>t.id));tasks=tasks.filter(t=>!ids.has(t.id));sync();});}catch{notify('File cadangan tidak valid. Pilih file JSON dari Ruang Hari.');}finally{e.target.value='';}});
+  $('#import-data').addEventListener('change',async e=>{const file=e.target.files[0],importAccount=cloud?.accountId;if(!file||!cloud?.active)return;try{if(file.size>10*1024*1024)throw Error();const data=JSON.parse(await file.text());if(!cloud?.active||cloud.accountId!==importAccount){notify('Akun berubah. Silakan pilih ulang file cadangan.');return;}if(data.app!=='ruang-hari'||data.version!==1||!Array.isArray(data.tasks)||data.tasks.length>10000||!data.tasks.every(validateTask))throw Error();const seen=new Set(tasks.map(t=>t.id));const added=[];for(const raw of data.tasks){if(!seen.has(raw.id)){seen.add(raw.id);added.push({...cleanTask(raw),demo:false});}}if(tasks.length+added.length>10000)throw Error();tasks.push(...added);if(!sync())return;backupDialog.close();notify(`${added.length} tugas berhasil diimpor.`,()=>{const ids=new Set(added.map(t=>t.id));tasks=tasks.filter(t=>!ids.has(t.id));sync();});}catch{notify('File cadangan tidak valid. Pilih file JSON dari Ruang Hari.');}finally{e.target.value='';}});
   $('#greeting-date').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  if(!loadError)persist();render();if(loadError)notify('Data browser tidak bisa dibaca. Data asli dipertahankan; impor cadangan untuk memulihkan.');
+  render();
   const initialGuestTasks=structuredClone(tasks);
   const readLocalTasks=()=>{try{const data=JSON.parse(localStorage.getItem(KEY));return Array.isArray(data?.tasks)&&data.tasks.every(validateTask)?data.tasks.map(cleanTask):structuredClone(initialGuestTasks);}catch{return structuredClone(initialGuestTasks);}};
   cloud=initCloud({
     validate:validateTask,notify,getTasks:()=>tasks,getLocalTasks:readLocalTasks,
     replaceTasks:incoming=>{tasks=incoming.map(cleanTask);return sync();},
-    onData:incoming=>{tasks=incoming===null?readLocalTasks():incoming.map(cleanTask);render();},
-    onState:state=>{if((cloudState.user?.id||null)!==(state.user?.id||null)){undoAction=null;$('#toast').hidden=true;query='';$('#search').value='';}cloudState=state;render();}
+    onData:incoming=>{tasks=incoming===null?[]:incoming.map(cleanTask);render();},
+    onState:state=>{if((cloudState.user?.id||null)!==(state.user?.id||null)){undoAction=null;$('#toast').hidden=true;query='';$('#search').value='';}if(!state.user)tasks=[];cloudState=state;render();}
   });
   initPwa(notify);
   // Refresh date-based views after midnight or returning to a backgrounded tab.

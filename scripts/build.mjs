@@ -27,8 +27,14 @@ if (key) {
 }
 await writeFile(resolve(out, 'config.js'), `export const cloudConfig = ${JSON.stringify({ url, key })};\n`);
 await build({entryPoints:[resolve(root,'web/app.js')],outfile:resolve(out,'app.js'),bundle:true,format:'esm',target:'es2022',minify:true,legalComments:'eof',external:['./config.js']});
+// A new HTML document must never execute an older cached, incompatible bundle.
+const bundle=await readFile(resolve(out,'app.js'));
+const bundleName=`app-${createHash('sha256').update(bundle).digest('hex').slice(0,12)}.js`;
+await writeFile(resolve(out,bundleName),bundle);await rm(resolve(out,'app.js'));
+const html=await readFile(resolve(out,'index.html'),'utf8');
+await writeFile(resolve(out,'index.html'),html.replace('src="app.js"',`src="${bundleName}"`));
 // Source modules are bundled; keep the deployment surface small.
-for (const f of ['cloud.js','cloud-store.js','pwa.js','email-credential.js']) await rm(resolve(out,f),{force:true});
+for (const f of ['auth-cloud.js','cloud-store.js','pwa.js','email-credential.js','auth-screen.js','auth-flow.js']) await rm(resolve(out,f),{force:true});
 await mkdir(resolve(out,'icons'),{recursive:true});
 const svg=await readFile(resolve(root,'web/icons/icon.svg'));
 for(const size of [192,512]) await sharp(svg).resize(size,size).png().toFile(resolve(out,`icons/icon-${size}.png`));
