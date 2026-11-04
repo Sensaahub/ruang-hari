@@ -55,4 +55,3 @@ Untuk pindah dari versi Sites lama, ekspor JSON di versi lama lalu impor di alam
 ## Verifikasi
 
 `npm test` menguji antrean offline, konflik dua perangkat, response yang hilang, edit saat request berjalan, perpindahan akun, kegagalan penyimpanan, dan isolasi data antar akun di PostgreSQL lokal PGlite. Pengujian layanan Supabase asli dan pemasangan perangkat fisik dilakukan terpisah.
-

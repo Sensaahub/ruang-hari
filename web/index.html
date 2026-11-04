@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f6f8">
+  <meta name="description" content="Ruang Hari, papan kanban pribadi untuk mengelola tugas dan rencana sehari-hari.">
+  <title>Ruang Hari · Papan tugas pribadi</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M15 4v16"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18M8 15h2m4 0h2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M19 4C9 2 3 7 5 14c2 7 15 6 14-10Z"/><path d="M5 21c1-7 5-10 10-13"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9H3Z"/></symbol>
+  </defs></svg>
+  <aside class="sidebar" id="sidebar">
+    <a href="#" class="brand" aria-label="Ruang Hari, semua tugas"><span class="brand-mark"><svg><use href="#i-leaf"/></svg></span>ruang hari<span class="brand-period">.</span></a>
+    <div class="workspace"><span class="workspace-avatar">R</span><div><strong>Ruang pribadi</strong><small>Rencana besar, langkah kecil</small></div><span class="workspace-dot"></span></div>
+    <p class="nav-label">RUANG SAYA</p>
+    <nav class="main-nav" aria-label="Tampilan tugas">
+      <button data-view="all" class="nav-item active"><svg><use href="#i-board"/></svg>Semua tugas<span id="all-count" class="nav-count">0</span></button>
+      <button data-view="today" class="nav-item"><svg><use href="#i-sun"/></svg>Hari ini<span id="today-count" class="nav-count">0</span></button>
+      <button data-view="week" class="nav-item"><svg><use href="#i-calendar"/></svg>7 hari ke depan</button>
+    </nav>
+    <div class="category-heading"><p class="nav-label">AREA KEHIDUPAN</p><span title="Atur kategori melalui detail tugas">6</span></div>
+    <nav id="category-nav" class="category-nav" aria-label="Filter area kehidupan"></nav>
+    <div class="sidebar-bottom">
+      <button class="backup-button" id="account-trigger">Masuk & sinkronkan</button>
+      <button class="backup-button" id="install-app">＋ Pasang aplikasi</button>
+      <div class="cloud-status" id="cloud-status" role="status">Hanya di perangkat ini</div>
+      <div class="small-note"><span class="note-spark">✳</span><p>Tidak harus semuanya hari ini.<br><strong>Satu langkah juga kemajuan.</strong></p></div>
+      <button class="backup-button" id="backup-open"><svg><use href="#i-download"/></svg>Cadangkan data<svg class="backup-chevron"><use href="#i-chevron"/></svg></button>
+      <div class="local-status"><span></span>Tersimpan di browser ini</div>
+    </div>
+  </aside>
+  <button class="sidebar-scrim" id="sidebar-scrim" aria-label="Tutup menu"></button>
+  <main>
+    <header class="topbar"><div class="breadcrumbs"><button class="mobile-menu icon-button" id="menu-open" aria-label="Buka menu"><svg><use href="#i-menu"/></svg></button><span>Ruang pribadi</span><span class="slash">/</span><strong>Papan tugas</strong></div><div class="topbar-right"><span class="private-label"><span></span>Ruang untuk dirimu</span><span class="avatar" aria-hidden="true">R</span></div></header>
+    <div class="page-content">
+      <div id="cloud-state-banner" class="cloud-state-banner" hidden><span id="cloud-state-text"></span><button id="banner-retry">Coba lagi</button></div>
+      <div id="conflict-banner" class="cloud-state-banner" hidden><span>Tugas berubah di perangkat lain. Pilih versi sebelum melanjutkan.</span><button id="open-conflict">Lihat perubahan</button></div>
+      <section class="page-heading"><div><p class="eyebrow" id="greeting-date"></p><h1>Pelan-pelan, satu per satu<span>.</span></h1><p class="intro">Semua yang ingin kamu kerjakan, dalam satu ruang.</p></div><button class="primary-button" id="new-task"><svg><use href="#i-plus"/></svg>Tambah tugas</button></section>
+      <section class="overview" aria-label="Ringkasan tugas"><div class="overview-intro"><span class="overview-icon"><svg><use href="#i-sun"/></svg></span><div><strong>Sedikit lebih teratur.</strong><p>Beri ruang untuk yang penting.</p></div></div><div class="overview-stat"><strong id="stat-active">0</strong><span>Tugas aktif</span></div><div class="overview-stat"><strong id="stat-today">0</strong><span>Tenggat hari ini</span></div><div class="overview-progress"><div><span>Sudah selesai</span><strong id="stat-progress">0/0</strong></div><div class="progress-track"><span id="progress-bar"></span></div></div></section>
+      <div class="demo-banner" id="demo-banner"><span><span class="demo-dot"></span>Mulai dari contoh ini, atau buat ruangmu sendiri.</span><button id="clear-demo">Hapus tugas contoh<svg><use href="#i-arrow"/></svg></button></div>
+      <section class="board-section" aria-label="Papan kanban">
+        <div class="board-toolbar"><div class="board-title"><svg><use href="#i-board"/></svg><h2 id="board-title">Semua tugas</h2><span id="result-count"></span></div><div class="toolbar-actions"><label class="search-box"><svg><use href="#i-search"/></svg><input id="search" type="search" placeholder="Cari tugas…" aria-label="Cari tugas"></label><label class="sort-box"><span>Urutkan:</span><select id="sort" aria-label="Urutkan tugas"><option value="manual">Manual</option><option value="due">Tenggat</option><option value="priority">Prioritas</option></select></label></div></div>
+        <div id="active-filter" class="active-filter" hidden></div>
+        <div class="kanban" id="board"></div>
+        <footer class="board-footer"><span><span class="drag-dots">⠿</span> Geser kartu untuk memindahkan tugas</span><span>Klik kartu untuk melihat detail <svg><use href="#i-arrow"/></svg></span></footer>
+      </section>
+    </div>
+  </main>
+  <dialog id="task-dialog" class="task-dialog" aria-labelledby="dialog-title"><form id="task-form"><div class="dialog-heading"><div><p class="eyebrow">SATU LANGKAH BERIKUTNYA</p><h2 id="dialog-title">Tambah tugas</h2></div><button type="button" class="icon-button" data-close aria-label="Tutup detail tugas"><svg><use href="#i-close"/></svg></button></div><label class="field">Apa yang ingin kamu kerjakan?<input name="title" id="task-title" required maxlength="160" placeholder="Misalnya, mulai baca buku baru" autocomplete="off"></label><label class="field">Catatan <span class="optional">opsional</span><textarea name="notes" rows="3" maxlength="5000" placeholder="Tulis detail atau hal yang perlu diingat…"></textarea></label><div class="form-grid"><label class="field">Area kehidupan<select name="category" id="task-category"></select></label><label class="field">Status<select name="status"><option value="plan">Rencana</option><option value="doing">Dikerjakan</option><option value="done">Selesai</option></select></label><label class="field">Prioritas<select name="priority"><option value="normal">Biasa</option><option value="high">Penting</option><option value="low">Santai</option></select></label><label class="field">Tenggat <span class="optional">opsional</span><input type="date" name="due" min="1900-01-01" max="9999-12-31"></label></div><div class="checklist-heading"><label for="check-new">Langkah kecil <span class="optional">opsional</span></label><span id="check-progress"></span></div><div id="checklist-editor"></div><div class="check-add"><input id="check-new" placeholder="Tambah langkah…" maxlength="200" aria-label="Langkah baru"><button type="button" id="check-add" class="icon-button" aria-label="Tambah langkah"><svg><use href="#i-plus"/></svg></button></div><div class="dialog-footer"><button type="button" class="delete-button" id="delete-task">Hapus tugas</button><div><button type="button" class="secondary-button" data-close>Batal</button><button type="submit" class="primary-button">Simpan tugas<svg><use href="#i-check"/></svg></button></div></div></form></dialog>
+  <dialog id="backup-dialog" class="backup-dialog" aria-labelledby="backup-title"><div class="dialog-heading"><h2 id="backup-title">Cadangan ruangmu</h2><button type="button" class="icon-button" data-close-backup aria-label="Tutup cadangan"><svg><use href="#i-close"/></svg></button></div><p>Tugas tersimpan di browser ini, belum disinkronkan antarperangkat. Unduh cadangan agar tetap punya salinannya.</p><button class="primary-button" id="export-data"><svg><use href="#i-download"/></svg>Unduh cadangan (.json)</button><hr><h3>Impor cadangan</h3><p>Tugas dari cadangan akan digabungkan. Tugas dengan ID yang sudah ada tidak ditambahkan lagi.</p><label class="secondary-button import-label">Pilih file cadangan<input type="file" id="import-data" accept=".json,application/json"></label><p class="backup-hint">Bersihkan browser atau ganti perangkat? Pulihkan lewat file ini.</p></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toast-message"></span><button id="toast-undo" hidden>Urungkan</button><button id="toast-close" aria-label="Tutup notifikasi">×</button></div>
+  <dialog id="account-dialog" class="backup-dialog" aria-labelledby="account-title">
+    <div class="dialog-heading"><h2 id="account-title">Akun & sinkronisasi</h2><button class="icon-button" id="close-account" aria-label="Tutup akun">×</button></div>
+    <p id="account-summary">Masuk agar tugas di laptop dan HP terhubung.</p>
+    <div id="cloud-setup-needed"><p>Sinkronisasi akun belum dikonfigurasi untuk versi ini. Tugas tetap bisa dipakai dan dicadangkan di perangkat ini.</p></div>
+    <form id="email-form" hidden><label class="field" for="login-email">Email kamu<input id="login-email" type="email" required autocomplete="email" placeholder="nama@email.com"></label><button class="primary-button" id="send-login" type="submit">Kirim tautan masuk</button><p id="login-feedback" role="status"></p><p class="backup-hint">Buka tautan dari email di perangkat ini. Gunakan email yang sama di HP dan laptop.</p></form>
+    <div id="signed-in-actions" hidden><p class="sync-detail" id="sync-state-detail"></p><p id="sync-error-detail" role="status" hidden></p><button class="secondary-button" id="sync-retry">Sinkronkan sekarang</button>
+      <hr><h3>Bawa tugas dari perangkat ini</h3><p>Tugas lokal tidak otomatis masuk ke akun. Gabungkan <strong id="merge-local-count">0</strong> tugas lokal milikmu (tugas contoh dikecualikan).</p><button class="secondary-button" id="merge-local">Gabungkan tugas lokal ke akun</button>
+      <hr><button class="secondary-button" id="sign-out">Keluar dari akun</button><p class="backup-hint">Perubahan yang belum terkirim tetap disimpan untuk akun ini di perangkat. Masuk lagi untuk melanjutkan sinkronisasi.</p>
+    </div>
+    <section id="cloud-conflict" class="conflict-panel" hidden><h3>Dua perangkat, dua versi</h3><p>Perubahan dari perangkat lain bertemu dengan perubahan di sini. Unduh salinan perangkat ini dahulu jika ingin menyimpan kedua versi.</p><button class="secondary-button" id="local-cloud-backup">Unduh salinan perangkat ini</button><div class="conflict-choices"><button class="secondary-button" id="use-remote">Pakai versi dari akun</button><button class="primary-button" id="use-local">Pakai versi perangkat ini</button></div><p class="backup-hint">Pilihanmu menggantikan seluruh papan. Versi yang tidak dipilih hanya dapat dipulihkan dari cadangan.</p></section>
+  </dialog>
+  <dialog id="install-dialog" class="backup-dialog" aria-labelledby="install-title"><div class="dialog-heading"><h2 id="install-title">Pasang di HP</h2><button class="icon-button" id="close-install" aria-label="Tutup panduan pasang">×</button></div><p><strong>Android · Chrome</strong><br>Buka menu ⋮ lalu pilih <strong>Instal aplikasi</strong> atau <strong>Tambahkan ke layar utama</strong>.</p><p><strong>iPhone · Safari</strong><br>Ketuk tombol Bagikan, lalu <strong>Tambah ke Layar Utama</strong>. Aktifkan “Buka sebagai App” jika tersedia.</p><p class="backup-hint">Setelah dipasang, masuk dengan email yang sama dengan web untuk melihat tugas yang sama.</p></dialog>
+  <script type="module" src="app.js"></script>
+</body></html>
