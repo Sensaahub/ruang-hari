@@ -20,7 +20,7 @@ Buka `http://127.0.0.1:5188`. Build tanpa konfigurasi Supabase berjalan dalam mo
 1. Buat project di akun sendiri dan simpan password databasenya secara pribadi.
 2. Jalankan `supabase/migrations/202611040001_personal_boards.sql` satu kali di SQL Editor.
 3. Di Authentication → URL Configuration, atur Site URL ke alamat GitHub Pages. Tambahkan alamat yang sama (dengan slash akhir) pada Redirect URLs. Untuk pengembangan boleh tambahkan `http://127.0.0.1:5188/`.
-4. Email provider harus aktif. Email bawaan Supabase memiliki batas pengiriman; gunakan SMTP sendiri untuk pemakaian reguler. Sesuaikan izin pendaftaran jika aplikasi hanya dipakai sendiri.
+4. Email provider harus aktif. Supabase Free memakai template tautan bawaan; aplikasi juga dapat menerima tautan yang ditempel langsung ke PWA. Jika nantinya memakai SMTP sendiri dan template kode `{{ .Token }}`, kode email juga didukung. Email bawaan Supabase memiliki batas pengiriman; gunakan SMTP sendiri untuk pemakaian reguler. Sesuaikan izin pendaftaran jika aplikasi hanya dipakai sendiri.
 5. Gunakan URL project dan **publishable key** (atau legacy anon key). Jangan gunakan `service_role`, secret key, password database, atau access token di aplikasi browser maupun repo.
 
 Database mengaktifkan RLS; akun hanya boleh membaca barisnya sendiri. Penyimpanan dilakukan lewat RPC yang mengambil identitas dari `auth.uid()`, memeriksa revisi, memvalidasi dokumen, dan menolak overwrite dengan revisi lama. Klien tidak diberi izin menulis tabel secara langsung.
@@ -38,7 +38,7 @@ Seluruh path manifest, ikon, worker, dan aset relatif, sehingga berjalan di subp
 
 - Android/Chrome: buka alamat web → menu ⋮ → Instal aplikasi / Tambahkan ke layar utama.
 - iPhone/Safari: Bagikan → Tambah ke Layar Utama.
-- Masuk memakai email yang sama di HP dan laptop. Tautan email dibuka di perangkat yang ingin dipakai.
+- Masuk memakai email yang sama di HP dan laptop. Buka tautan masuk dari email. Di PWA yang terpasang, salin alamat tombol masuk dari email lalu tempel di form aplikasi agar sesi tetap berada di PWA.
 
 ## Data, offline, dan konflik
 

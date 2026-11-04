@@ -12,5 +12,8 @@ self.addEventListener('fetch',event=>{
   if(req.mode==='navigate'&&(url.pathname===SCOPE||url.pathname===SCOPE+'index.html')){
     event.respondWith(fetch(req).catch(()=>caches.match(new URL('./index.html',self.registration.scope))));return;
   }
-  if(!url.search&&ASSETS.has(url.pathname))event.respondWith(caches.open(CACHE).then(async c=>(await c.match(req))||fetch(req)));
+  if(!url.search&&ASSETS.has(url.pathname))event.respondWith(caches.open(CACHE).then(async c=>{
+    try{const response=await fetch(req);if(response.ok)await c.put(req,response.clone());return response;}
+    catch(error){const saved=await c.match(req);if(saved)return saved;throw error;}
+  }));
 });

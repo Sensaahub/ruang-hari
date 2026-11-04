@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { cloudConfig } from './config.js';
 import { CloudStore } from './cloud-store.js';
+import { emailCredential } from './email-credential.js';
 
 export function initCloud({validate,onData,onState,notify,getTasks,getLocalTasks,replaceTasks}){
   const $=s=>document.querySelector(s);
@@ -13,6 +14,7 @@ export function initCloud({validate,onData,onState,notify,getTasks,getLocalTasks
     $('#account-summary').textContent=state.user?state.user.email:'Masuk agar tugas di laptop dan HP terhubung.';
     $('#account-trigger').textContent=state.user?'Akun & sinkronisasi':'Masuk & sinkronkan';
     $('#email-form').hidden=!configured||!!state.user;
+    if(state.user)$('#otp-form').hidden=true;
     $('#cloud-setup-needed').hidden=configured;
     $('#signed-in-actions').hidden=!state.user;
     $('#sync-state-detail').textContent=labels[state.phase]||state.phase;
@@ -55,8 +57,15 @@ export function initCloud({validate,onData,onState,notify,getTasks,getLocalTasks
     try{
       const {error}=await client.auth.signInWithOtp({email:$('#login-email').value.trim(),options:{emailRedirectTo:new URL('./',location.href).href}});
       if(error)throw error;
-      $('#login-feedback').textContent='Tautan masuk sudah dikirim. Buka email di perangkat ini, lalu klik tautannya.';
+      $('#login-feedback').textContent='Tautan sudah dikirim. Klik tombol masuk di email. Untuk masuk langsung di PWA ini, salin alamat tombol dari email lalu tempel di bawah.';
+      $('#otp-email').textContent=$('#login-email').value.trim();$('#otp-form').dataset.email=$('#login-email').value.trim();$('#otp-form').hidden=false;$('#login-code').focus();
     }catch(error){$('#login-feedback').textContent=/rate limit|too many/i.test(error.message)?'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.':'Tautan belum terkirim. Periksa email dan koneksi, lalu coba lagi.';}
+    finally{button.disabled=false;}
+  });
+  $('#otp-form').addEventListener('submit',async e=>{
+    e.preventDefault();if(!client)return;const button=$('#verify-login');button.disabled=true;
+    try{const credential=emailCredential($('#login-code').value,{email:$('#otp-form').dataset.email,url:cloudConfig.url});const {error}=await client.auth.verifyOtp(credential);if(error)throw error;$('#login-code').value='';$('#otp-form').hidden=true;accountDialog.close();notify('Sudah masuk. Tugas akun sedang dimuat.');}
+    catch{$('#otp-feedback').textContent='Tautan tidak valid atau sudah kedaluwarsa. Salin alamat tombol masuk dari email terbaru, atau kirim ulang.';}
     finally{button.disabled=false;}
   });
   $('#sign-out').addEventListener('click',async()=>{

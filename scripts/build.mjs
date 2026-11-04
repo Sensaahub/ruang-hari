@@ -28,7 +28,7 @@ if (key) {
 await writeFile(resolve(out, 'config.js'), `export const cloudConfig = ${JSON.stringify({ url, key })};\n`);
 await build({entryPoints:[resolve(root,'web/app.js')],outfile:resolve(out,'app.js'),bundle:true,format:'esm',target:'es2022',minify:true,legalComments:'eof',external:['./config.js']});
 // Source modules are bundled; keep the deployment surface small.
-for (const f of ['cloud.js','cloud-store.js','pwa.js']) await rm(resolve(out,f),{force:true});
+for (const f of ['cloud.js','cloud-store.js','pwa.js','email-credential.js']) await rm(resolve(out,f),{force:true});
 await mkdir(resolve(out,'icons'),{recursive:true});
 const svg=await readFile(resolve(root,'web/icons/icon.svg'));
 for(const size of [192,512]) await sharp(svg).resize(size,size).png().toFile(resolve(out,`icons/icon-${size}.png`));
